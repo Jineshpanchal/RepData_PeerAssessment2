@@ -1,35 +1,40 @@
 ---
 title: "Storm_Impact"
 author: "Jinesh Panchal"
-date: "Tuesday, January 20, 2015"
+date: "Tuesday, January 21, 2015"
 output: html_document
 ---
-##Synopsis
+
+
+
+##SYNOPSIS
     Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.  
     This project involves exploring the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database. This database tracks characteristics of major storms and weather events in the United States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage.  
     We will display this analyis, project in sequence.Sequenc start with,  
     1. Preprocessing of data
-    2. Processing of data(Computation of data)  
+    2. Processing of data(Computation of data for Fatalities, Injuries, Property loss)    
     3. Result display in form of numerics and tables  
     4. Result display in form of figure  
-    
- 
-##Data Processing
+let's start working on it.    
+
+
+##DATA PROCESSING
 ###Preprocessing of data  
-   
-   First of all we need to get the data from zip folder.Simply by **unzip** we wouldnt be able to unzip **bzip2** data, so here we have to install package called **r.utils** and Loading package.
-     
+    
+   First of all we need to get the data from zip folder.Simply by **unzip** functoin we wouldnt be able to unzip **bzip2** type data, so here we have to install package called **r.utils** and Loading all the required packages.
+  
 ```{r,results='asis',message=FALSE}
 library(ggplot2)
 library(plyr)
 library(R.utils, warn.conflicts=FALSE)
 ```
 
-After loading package we needs to unzip data using **bunzip** function.  We are storing whole datasets or table in variable called as **storm**.
+  After loading package we needs to unzip data using **bunzip** function.  We are storing whole datasets or table in variable called as **storm**.
 
 ```{r,cache = TRUE}
 bunzip2("repdata-data-StormData.csv.bz2")
 storm <- read.csv("repdata-data-StormData.csv",header = TRUE)
+dim(storm)
 ```    
 Now we have raw data with some extra column which is not required for computation.    By simply doing some basic levlels of preprocessing on raw data.
 ```{r,cache=TRUE}
@@ -39,13 +44,13 @@ names(storm) <- tolower(names(storm))
 imp <- c(8,23,24,25,27)
 #extract important datasets from original datasets
 storm <- storm[,imp]
-#Lets see the column we extracted from orignal datasets
-names(storm)
-#Now we have same datasets with only required column.
+#Lets summarize the column we extracted from orignal datasets
+summary(storm)
+#Now we have same dataset "storm" with only required column.
 #Prprocessing of data has been done.
 ```
  
-###Computation of data
+###COMPUTATION
 Now we have to start doing processing on accquired data.  
 first we will load package called **plyr**, which we already did at the very begining.  Now we will summarize this data on basis of total injuries,total fatalities and total property loss which is affected by several type of event
  
@@ -55,66 +60,84 @@ health.aff.data <- ddply(storm,.(evtype),summarize,total.injuries=sum(injuries,n
 summary(health.aff.data)
 ```
 
-Now we have data which display, effect of various events on fatalities and injuries.  
+Now we have data which display the effect of various events on fatalities and injuries.  
 But we have to select only topmost (12) data of **Fatalities and Injuries**   
+
+###Fatalities data computation 
 
 ```{r}
 #Top 12 fatalities Data
 top.fatalities <- head(arrange(health.aff.data,desc(total.fatalities)),12)
-top.fatalities <- top.fatalities[,c(1,3)]
+top.fatalities <- top.fatalities[,c(1,3)]  
+summary(top.fatalities)
 #We will display this data at time of result section
-
+```    
+###Injuries data computation    
+```{r}
 #Top 12 Injuries Data
 top.injuries <- head(arrange(health.aff.data,desc(total.injuries)),12)
 top.injuries <- top.injuries[,1:2]
+summary(top.injuries)
 #We will display this data at time of result section
 ```
-
-We have done computation based on **fatalities and injuries**, now we are going to do the computation for **Property loss** because of several events.
+###Property loss data computation  
+We have done computation based on **fatalities and injuries**, now we are going to do the computation for **Property loss** which includes column **Propdmg and cropdmg** because of several events.
 ```{r}
-property.aff.data <- ddply(storm,.(evtype),summarize,total.dmg = sum(propdmg,na.rm=T))
+property.aff.data <- ddply(storm,.(evtype),summarize,total.dmg = sum(propdmg,cropdmg,na.rm=T))
 #Top 12 Property Loss data
 top.property <- head(arrange(property.aff.data,desc(total.dmg)),12)
 #Total property(loss/1000000 for easy depiction on graph) due to diffrent type of event.  
 top.property$total.dmg <- top.property$total.dmg/1000000
-
+summary(top.property)
 ```
 
-##Result
-Now we are going to display the result of above computation.  
+
+##RESULTS  
+Now we are going to display the result of above computation.    
+
+###1. Top Events which affected on Human Health(Fatalities)  
 ```{r}
 #Top 12 data on Fatalities due to diffrent event type
 top.fatalities
+```
+###2. Top Events which affected on Human Health(Injuries)  
+```{r}
 #Top 12 data on injuries due to diffrent event type
 top.injuries
+```
+###3. Top Events which has greatest economic consequences  
+```{r}
 #Top 12 on property loss/1000000 due to diffrent event type
 top.property
 ```
 
-##Figures which depict the result. 
-1. this figure depict the total fatalities cause by different type of event.and also show the which event are the culprit among all.
 
-```{r,fig.height=9,fig.width=18}
+##FIGURES
+####1. This figure depict the total fatalities cause by different type of events and shows which events are the culprit among all.
+
+```{r,fig.height=9,fig.width=18,fig.align='center'}
 #Plotting data for top 12 fatalities by diffrent eventype.
 plot.fatalities <- ggplot(top.fatalities,aes(evtype,total.fatalities,fill=evtype))+geom_bar(stat = "identity")+scale_fill_discrete("Event Type")+theme(legend.title = element_text(colour="blue", size=16, face="bold"))+ggtitle("Most harmful (Top-12) event affected on human health - FATALITIES")+xlab("Event Type")+ylab("Total Fatalities")+ggsave("fatalities.png",width = 20,height = 10)
 plot.fatalities
 ```
 
-2. this figure depict the total injuries cause by different type of event.and also show the which event are the culprit among all.
+####2. This figure depict the total number of injuries cause by different type of events and shows which events are the culprit among all.
 
-```{r,fig.height=9,fig.width=18}
+```{r,fig.height=9,fig.width=18,fig.align='center'}
 plot.injuries <- ggplot(top.injuries,aes(evtype,total.injuries,fill=evtype))+geom_bar(stat = "identity")+scale_fill_discrete("Event Type")+theme(legend.title = element_text(colour="blue", size=16, face="bold"))+ggtitle("Most harmful (Top-12) event affected on human health - INJURIES")+xlab("Event Type")+ylab("Total Injuries")+ggsave("injuries.png",width = 20,height = 10)
 plot.injuries
 ```
 
 
-3. This figure depict the total property loss cause by different type of event.and also show the which event are the culprit among all.
+####3. This figure depict the total property loss(Propdmg+cropdmg) cause by different type of events and shows which events are the culprit among all.
 
-```{r,fig.height=9,fig.width=18}
-plot.property <- ggplot(top.property,aes(evtype,total.dmg,fill=evtype))+geom_bar(stat = "identity")+scale_fill_discrete("Event Type")+theme(legend.title = element_text(colour="blue", size=16, face="bold"))+ggtitle("Most harmful (Top-12) event which have greatest economic consequences")+xlab("Event Type")+ylab("Total Economic loss in millions")+ggsave("Propertyloss.png",width = 20,height = 10)
+```{r,fig.height=9,fig.width=18,fig.align='center'}
+plot.property <- ggplot(top.property,aes(evtype,total.dmg,fill=evtype))+geom_bar(stat = "identity")+scale_fill_discrete("Event Type")+theme(legend.title = element_text(colour="blue", size=16, face="bold"))+ggtitle("Most harmful (Top-12) event which have greatest economic consequences - (Propdmg + Cropdmg)")+xlab("Event Type")+ylab("Total Economic loss in millions-(propdmg+cropdmg)/1000000")+ggsave("Propertyloss.png",width = 20,height = 10)
 plot.property
 ```
 
-Incase figure is not clearly visible, go to my repository ("https://github.com/Jineshpanchal/RepData_PeerAssessment2") and have a look at figures. 
-We are done with Preprocessing, computation, and picturization.
-Hope you find it useful and valid.
+####**Note** :- Incase figure is not clearly visible, go to my repository ("https://github.com/Jineshpanchal/RepData_PeerAssessment2") and have a look at figures.       
+
+####We are done with Preprocessing, computation,display and picturization.
+
+####Hope you find it useful and valid.
